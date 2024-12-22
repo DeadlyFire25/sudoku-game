@@ -4,6 +4,7 @@
   export let value: number = 0;
   export let isInitial: boolean = false;
   export let isError: boolean = false;
+  export let isConflict: boolean = false;
   export let isSelected: boolean = false;
   export let onClick: () => void;
   export let onInput: (value: number) => void;
@@ -25,25 +26,28 @@
       onInput(0);
     }
   }
+
+  $: cellClasses = [
+    'w-full h-14 flex items-center justify-center text-xl transition-all duration-200 focus:border-none active:border-none', 
+    isInitial ? 'bg-gray-100 font-bold text-gray-700' : 'bg-white hover:bg-blue-100',
+    isError ? 'text-red-600 bg-red-400' : '',
+    isConflict ? 'bg-red-500/50 hover:bg-red-500/501' : '',
+    isSelected ? 'bg-blue-400 ring-2 ring-blue-400' : 'border border-gray-200',
+    value && !isInitial ? 'text-blue-700 font-medium focus:border-none active:border-none' : '',
+    $isPaused ? 'opacity-50' : '',
+  ].filter(Boolean).join(' ');
 </script>
 
 <div 
-  class="relative w-full h-full cursor-pointer {$isPaused ? 'cursor-not-allowed' : ''}"
+  class="relative w-full h-full"
+  class:cursor-pointer={!$isPaused && !isInitial}
+  class:cursor-not-allowed={$isPaused || isInitial}
   on:click={handleClick}
   on:keydown={handleKeydown}
   tabindex={isInitial ? -1 : 0}
   role="button"
 >
-  <div
-    class="w-full md:h-14 h-10 flex items-center justify-center text-xl font-semibold border
-           {isInitial ? 'bg-gray-100 font-bold text-blue-600' : 'bg-white'} 
-           {isError ? 'bg-red-300 bg-opacity-40 border-red-500' : 'border-gray-300'}
-           {isSelected ? 'bg-blue-100 border-blue-700' : ''}
-           {$isPaused ? 'opacity-50' : ''}"
-  >
+  <div class={cellClasses}>
     {value || ''}
   </div>
-  {#if $isPaused && !isInitial}
-    <div class="absolute inset-0 bg-blue-200 opacity-50"></div>
-  {/if}
 </div>

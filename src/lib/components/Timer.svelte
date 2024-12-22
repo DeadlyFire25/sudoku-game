@@ -30,22 +30,18 @@
     isPaused.update(p => !p);
   }
 
-  $: buttonText = $isPaused ? '▶️' : '⏸️';
+  $: buttonText = $isPaused ? 'Reanudar' : 'Pausar';
 </script>
 
 <div class="flex items-center gap-4">
-  <div class="flex flex-row text-3xl font-bold font-mono bg-white pr-8 py-3 rounded-2xl shadow items-center">
-    
-    {#if !$isGameComplete}
+  <div class="text-3xl font-bold font-mono bg-white px-6 py-3 rounded-lg shadow">
+    {formatTime($timer)}
+  </div>
+  {#if !$isGameComplete}
     <button
       on:click={togglePause}
-      class="rounded-full border-solid border-gray-500 text-5xl">
+      class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold shadow-md transition-colors">
       {buttonText}
     </button>
   {/if}
-
-    {formatTime($timer)}
-    
-  </div>
-  
 </div>

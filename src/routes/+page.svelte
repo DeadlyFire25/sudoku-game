@@ -24,6 +24,7 @@
     <h1 class="text-4xl font-bold text-center mb-2 text-gray-800">Sudoku</h1>
     
     <div class="flex flex-col items-center py-8 gap-4">
+      <Timer />
       <SudokuGrid />
       
       {#if $isGameComplete}

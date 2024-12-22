@@ -4,17 +4,18 @@
   import SudokuCell from './SudokuCell.svelte';
   import NumberPad from './NumberPad.svelte';
   import CompletionModal from './CompletionModal.svelte';
-  import Timer from './Timer.svelte';
   
   let currentGame = createNewGame($difficulty);
   let userGrid = currentGame.puzzle.map(row => [...row]);
   let errors: boolean[][] = Array(9).fill(null).map(() => Array(9).fill(false));
+  let conflicts: boolean[][] = Array(9).fill(null).map(() => Array(9).fill(false));
   let totalErrors = 0;
   let selectedCell: { row: number; col: number } | null = null;
   
   function handleCellClick(row: number, col: number) {
     if (!currentGame.puzzle[row][col]) {
       selectedCell = { row, col };
+      clearConflicts();
     }
   }
 
@@ -27,6 +28,11 @@
         }
         userGrid[row][col] = number;
         checkErrors();
+        if (number !== 0) {
+          highlightConflicts(row, col, number);
+        } else {
+          clearConflicts();
+        }
         checkCompletion();
       }
     }
@@ -47,6 +53,42 @@
       }
     }
   }
+
+  function clearConflicts() {
+    conflicts = Array(9).fill(null).map(() => Array(9).fill(false));
+  }
+
+  function highlightConflicts(row: number, col: number, value: number) {
+    clearConflicts();
+    
+    // Check row
+    for (let j = 0; j < 9; j++) {
+      if (j !== col && userGrid[row][j] === value) {
+        conflicts[row][j] = true;
+        conflicts[row][col] = true;
+      }
+    }
+
+    // Check column
+    for (let i = 0; i < 9; i++) {
+      if (i !== row && userGrid[i][col] === value) {
+        conflicts[i][col] = true;
+        conflicts[row][col] = true;
+      }
+    }
+
+    // Check box
+    const boxRow = Math.floor(row / 3) * 3;
+    const boxCol = Math.floor(col / 3) * 3;
+    for (let i = boxRow; i < boxRow + 3; i++) {
+      for (let j = boxCol; j < boxCol + 3; j++) {
+        if ((i !== row || j !== col) && userGrid[i][j] === value) {
+          conflicts[i][j] = true;
+          conflicts[row][col] = true;
+        }
+      }
+    }
+  }
   
   function checkCompletion() {
     const isComplete = userGrid.every((row, i) =>
@@ -63,6 +105,7 @@
     currentGame = createNewGame(diff);
     userGrid = currentGame.puzzle.map(row => [...row]);
     errors = Array(9).fill(null).map(() => Array(9).fill(false));
+    conflicts = Array(9).fill(null).map(() => Array(9).fill(false));
     totalErrors = 0;
     selectedCell = null;
     isGameComplete.set(false);
@@ -77,30 +120,30 @@
   }
 </script>
 
-<div class="flex flex-col items-center gap-4">
-  <div class="w-4/5 flex flex-row gap-2">
+<div class="flex flex-col items-center gap-6 relative z-10">
+  <div class="w-48 relative z-20">
     <select
-      class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xl"
+      class="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
       on:change={handleDifficultyChange}
       value={$difficulty}>
       {#each Object.entries(difficulties) as [diff]}
         <option value={diff}>{diff.charAt(0).toUpperCase() + diff.slice(1)}</option>
       {/each}
     </select>
-    <Timer />
   </div>
   
   <div class="relative">
-    <div class="grid grid-cols-9 gap-0 bg-gray-300 p-1 rounded-lg shadow-lg">
+    <div class="grid grid-cols-9 gap-0.5 bg-gray-300 p-1 rounded-lg shadow-lg">
       {#each userGrid as row, i}
         {#each row as cell, j}
-          <div class="relative md:w-14 w-10 {(Math.floor(i/3) + Math.floor(j/3)) % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+          <div class="relative w-14 {(Math.floor(i/3) + Math.floor(j/3)) % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                       {i % 3 === 2 && i !== 8 ? 'border-b-2 border-gray-400' : ''}
                       {j % 3 === 2 && j !== 8 ? 'border-r-2 border-gray-400' : ''}">
             <SudokuCell
               value={cell}
               isInitial={currentGame.puzzle[i][j] !== 0}
               isError={errors[i][j]}
+              isConflict={conflicts[i][j]}
               isSelected={selectedCell?.row === i && selectedCell?.col === j}
               onClick={() => handleCellClick(i, j)}
               onInput={handleNumberInput}
